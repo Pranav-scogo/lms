@@ -1,26 +1,54 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Upload, FileText, Loader2 } from "lucide-react"
-import { Progress } from "@/components/ui/progress"
-import Link from "next/link"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Upload, FileText, Loader2 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import Link from "next/link";
+
+interface ProcessedData {
+  summary: string;
+  quiz: {
+    question: string;
+    options: string[];
+    correctAnswer: number;
+  }[];
+}
 
 export default function LearnPage() {
-  const [isUploading, setIsUploading] = useState(false)
-  const [showSummary, setShowSummary] = useState(false)
+  const [isUploading, setIsUploading] = useState(false);
+  const [showSummary, setShowSummary] = useState(false);
+  const [processedData, setProcessedData] = useState<ProcessedData | null>(
+    null
+  );
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setIsUploading(true)
-      // Simulate file processing
-      setTimeout(() => {
-        setIsUploading(false)
-        setShowSummary(true)
-      }, 2000)
+      const file = e.target.files[0];
+      setIsUploading(true);
+
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const response = await fetch("http://localhost:8000/api/pdf/process", {
+          method: "POST",
+          body: formData,
+        });
+        console.log(response);
+
+        const data = await response.json();
+        console.log(data);
+        setProcessedData(data);
+        setIsUploading(false);
+        setShowSummary(true);
+      } catch (error) {
+        console.error("Error processing PDF:", error);
+        setIsUploading(false);
+      }
     }
-  }
+  };
 
   return (
     <div className="container py-8 max-w-4xl">
@@ -32,7 +60,9 @@ export default function LearnPage() {
                 <div className="space-y-4">
                   <Loader2 className="h-10 w-10 text-primary animate-spin mx-auto" />
                   <div>
-                    <h3 className="text-lg font-semibold mb-2">Processing your document...</h3>
+                    <h3 className="text-lg font-semibold mb-2">
+                      Processing your document...
+                    </h3>
                     <Progress value={66} className="w-[300px]" />
                   </div>
                 </div>
@@ -43,9 +73,16 @@ export default function LearnPage() {
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold">Upload your PDF</h3>
-                    <p className="text-sm text-muted-foreground mt-1">Drag and drop or click to select a file</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Drag and drop or click to select a file
+                    </p>
                   </div>
-                  <input type="file" className="hidden" accept=".pdf" onChange={handleFileUpload} />
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept=".pdf"
+                    onChange={handleFileUpload}
+                  />
                 </label>
               )}
             </div>
@@ -63,22 +100,7 @@ export default function LearnPage() {
 
           <Card>
             <CardContent className="pt-6">
-              <div className="prose max-w-none">
-                <h3>Introduction to Machine Learning</h3>
-                <p>
-                  Machine Learning is a subset of artificial intelligence that focuses on developing systems that can
-                  learn and improve from experience. Key concepts include:
-                </p>
-                <ul>
-                  <li>Supervised Learning: Training with labeled data</li>
-                  <li>Unsupervised Learning: Finding patterns in unlabeled data</li>
-                  <li>Reinforcement Learning: Learning through interaction with an environment</li>
-                </ul>
-                <p>
-                  The field has numerous applications across industries, from healthcare to finance, and continues to
-                  evolve rapidly with technological advancement.
-                </p>
-              </div>
+              <div className="prose max-w-none">{processedData?.summary}</div>
             </CardContent>
           </Card>
 
@@ -90,6 +112,5 @@ export default function LearnPage() {
         </div>
       )}
     </div>
-  )
+  );
 }
-
