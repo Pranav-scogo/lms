@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Upload, FileText, Loader2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import Link from "next/link";
+import QuizPage from "./quiz/quiz";
 
 interface ProcessedData {
   summary: string;
@@ -22,6 +23,9 @@ export default function LearnPage() {
   const [processedData, setProcessedData] = useState<ProcessedData | null>(
     null
   );
+  const [showQuiz,setShowQuiz] = useState(false)
+  const [questions,setQuestions] = useState<any>(null)
+
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -43,12 +47,17 @@ export default function LearnPage() {
         setProcessedData(data);
         setIsUploading(false);
         setShowSummary(true);
+        setQuestions(data?.questions)
       } catch (error) {
         console.error("Error processing PDF:", error);
         setIsUploading(false);
       }
     }
   };
+
+  if(showQuiz){
+    return <QuizPage questions={questions}/>
+  }
 
   return (
     <div className="container py-8 max-w-4xl">
@@ -105,9 +114,7 @@ export default function LearnPage() {
           </Card>
 
           <div className="flex justify-end">
-            <Button asChild>
-              <Link href="/learn/quiz">Take Quiz</Link>
-            </Button>
+            <Button onClick={()=>setShowQuiz(true)}>Take Quiz</Button>
           </div>
         </div>
       )}
